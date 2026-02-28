@@ -69,10 +69,24 @@
     return d;
   }
 
+  // UK outward postcode patterns: A9, A99, A9A, AA9, AA99, AA9A
+  var OUTWARD_RE = /^[A-Z]{1,2}\d[A-Z\d]?$/;
+
   function sanitisePostcode(raw) {
-    var trimmed = raw.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
-    if (trimmed.length >= 2 && trimmed.length <= 4) {
-      return trimmed;
+    // Strip all whitespace and non-alphanumeric, uppercase
+    var cleaned = raw.replace(/\s+/g, '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (cleaned.length === 0) return null;
+
+    // If the user entered a full postcode (e.g. "SW1A1AA" or "SW11AA"),
+    // the inward part is always the last 3 characters (digit + 2 letters).
+    // Strip it to extract just the outward code.
+    if (cleaned.length >= 5 && /\d[A-Z]{2}$/.test(cleaned)) {
+      cleaned = cleaned.slice(0, -3);
+    }
+
+    // Validate against known UK outward postcode patterns
+    if (OUTWARD_RE.test(cleaned)) {
+      return cleaned;
     }
     return null;
   }
@@ -346,13 +360,30 @@
       }
     });
 
-    // Postcode change: debounce and re-fetch
+    // Postcode change: debounce and re-fetch only when the postcode
+    // is either empty (national) or a valid UK outward code.
+    // While the user is mid-typing an incomplete postcode, do nothing
+    // so we don't fire failed API calls or flash the national data.
     var postcodeTimer = null;
+    var lastUsedPostcode = null;
     postcodeInput.addEventListener('input', function () {
       clearTimeout(postcodeTimer);
       postcodeTimer = setTimeout(function () {
-        cachedSlots = null;
-        update(true);
+        var raw = postcodeInput.value;
+        var parsed = sanitisePostcode(raw);
+        var isEmpty = raw.trim().length === 0;
+
+        // Only re-fetch if the postcode is empty (switch to national)
+        // or is a valid outward code that differs from the last fetch.
+        if (isEmpty || parsed) {
+          var effective = parsed || null;
+          if (effective !== lastUsedPostcode) {
+            lastUsedPostcode = effective;
+            cachedSlots = null;
+            update(true);
+          }
+        }
+        // Otherwise the user is mid-typing — do nothing, keep current data
       }, 800);
     });
 
