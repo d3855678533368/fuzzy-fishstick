@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Carbon-Aware Dishwasher Timer</title>
+  <meta name="description" content="Find the greenest time to run your dishwasher in the next 4 hours using UK grid carbon intensity forecasts.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>Carbon-Aware Dishwasher Timer</h1>
+    <p class="subtitle">Find the greenest time to run your dishwasher</p>
+  </header>
+
+  <main>
+    <section id="settings" aria-label="Settings">
+      <div class="settings-row">
+        <div class="setting">
+          <label for="cycle-duration">Cycle duration</label>
+          <select id="cycle-duration">
+            <option value="60" selected>1 hour</option>
+            <option value="90">1.5 hours</option>
+            <option value="120">2 hours</option>
+          </select>
+        </div>
+        <div class="setting">
+          <label for="postcode">UK postcode <span class="optional">(optional)</span></label>
+          <input type="text" id="postcode" placeholder="e.g. SW1A" maxlength="4" autocomplete="postal-code">
+        </div>
+      </div>
+    </section>
+
+    <section id="recommendation" aria-live="polite" aria-label="Recommendation">
+    </section>
+
+    <section id="delay-options" aria-label="Delay comparison">
+    </section>
+
+    <section id="forecast-section" aria-label="Carbon intensity forecast">
+      <h2>Forecast (next 6 hours)</h2>
+      <div id="chart-container"></div>
+    </section>
+
+    <div id="loading" class="overlay" hidden>
+      <div class="spinner"></div>
+      <p>Loading forecast data&hellip;</p>
+    </div>
+
+    <div id="error" class="overlay" hidden>
+      <p id="error-message"></p>
+      <button id="retry-btn">Retry</button>
+    </div>
+  </main>
+
+  <footer>
+    <p>Data from the <a href="https://carbonintensity.org.uk/" target="_blank" rel="noopener">National Grid ESO Carbon Intensity API</a></p>
+    <p id="last-updated"></p>
+  </footer>
+
+  <noscript>
+    <p style="text-align:center;padding:2rem;">This app requires JavaScript to fetch live carbon intensity data.</p>
+  </noscript>
+
+  <script src="app.js"></script>
+</body>
+</html>
