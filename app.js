@@ -360,6 +360,12 @@
     // Hide forecast section until data loads
     forecastSection.setAttribute('hidden', '');
 
+    // Restore saved postcode from localStorage
+    try {
+      var saved = localStorage.getItem('postcode');
+      if (saved) postcodeInput.value = saved;
+    } catch (e) { /* localStorage unavailable — ignore */ }
+
     // Initial load
     update(true);
 
@@ -382,6 +388,15 @@
         var raw = postcodeInput.value;
         var parsed = sanitisePostcode(raw);
         var isEmpty = raw.trim().length === 0;
+
+        // Persist to localStorage
+        try {
+          if (isEmpty) {
+            localStorage.removeItem('postcode');
+          } else {
+            localStorage.setItem('postcode', raw);
+          }
+        } catch (e) { /* localStorage unavailable — ignore */ }
 
         // Only re-fetch if the postcode is empty (switch to national)
         // or is a valid outward code that differs from the last fetch.
