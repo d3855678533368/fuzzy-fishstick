@@ -36,7 +36,8 @@
   var lastUpdatedEl = document.getElementById('last-updated');
 
   var cachedSlots = null;
-  var refreshTimer = null;
+  var refreshTimerId = null;
+  var nextBoundary = null;
 
   // --- Utilities ---
 
@@ -418,23 +419,30 @@
       update(true);
     });
 
-    // Auto-refresh every 30 minutes
-    refreshTimer = setInterval(function () {
-      cachedSlots = null;
-      update(true);
-    }, 30 * 60 * 1000);
+    // Schedule a refresh at the next half-hour boundary so data
+    // updates exactly when the current slot expires.
+    function scheduleNextRefresh() {
+      clearTimeout(refreshTimerId);
+      // Add 1ms so that if we're exactly on a boundary we target the next one
+      nextBoundary = roundUpToHalfHour(new Date(Date.now() + 1));
+      var delay = Math.max(nextBoundary - Date.now(), 1000);
+      refreshTimerId = setTimeout(function () {
+        cachedSlots = null;
+        update(true);
+        scheduleNextRefresh();
+      }, delay);
+    }
 
-    // Refresh when page becomes visible after being hidden for a while
-    var lastVisible = Date.now();
+    scheduleNextRefresh();
+
+    // When the tab becomes visible again, check if we've crossed
+    // the boundary while hidden (browsers throttle timers in
+    // background tabs). If so, refresh immediately and reschedule.
     document.addEventListener('visibilitychange', function () {
-      if (!document.hidden) {
-        var elapsed = Date.now() - lastVisible;
-        if (elapsed > 15 * 60 * 1000) { // 15 minutes
-          cachedSlots = null;
-          update(true);
-        }
-      } else {
-        lastVisible = Date.now();
+      if (!document.hidden && nextBoundary && Date.now() >= nextBoundary) {
+        cachedSlots = null;
+        update(true);
+        scheduleNextRefresh();
       }
     });
   });
