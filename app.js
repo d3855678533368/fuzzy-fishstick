@@ -63,9 +63,19 @@
     return INDEX_COLOURS[index] || '#999';
   }
 
-  function roundToHalfHour(date) {
+  function roundUpToHalfHour(date) {
     var d = new Date(date.getTime());
-    d.setUTCMinutes(d.getUTCMinutes() < 30 ? 0 : 30, 0, 0);
+    var mins = d.getUTCMinutes();
+    if (mins === 0 || mins === 30) {
+      // Already on a boundary — use as-is
+      d.setUTCSeconds(0, 0);
+    } else if (mins < 30) {
+      d.setUTCMinutes(30, 0, 0);
+    } else {
+      // Round up to the next hour
+      d.setUTCMinutes(0, 0, 0);
+      d.setUTCHours(d.getUTCHours() + 1);
+    }
     return d;
   }
 
@@ -94,7 +104,7 @@
   // --- API ---
 
   function buildApiUrl(postcode) {
-    var from = roundToHalfHour(new Date());
+    var from = roundUpToHalfHour(new Date());
     var iso = from.toISOString().replace(/\.\d{3}Z$/, 'Z');
 
     if (postcode) {
